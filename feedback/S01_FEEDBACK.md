@@ -1,6 +1,6 @@
 # Rétroaction automatisée -- S01 (Diagnostic fondamental -- NexaMart kickoff)
 
-_Générée le 2026-05-14T22:54:16+00:00 -- Run `20260514T221333Z-7d34bf6a`_
+_Générée le 2026-05-14T23:56:38+00:00 -- Run `20260514T235532Z-d8b8f471`_
 
 Ce document est produit par un pipeline reproductible (vérification SQL déterministe + analyse LLM du brief et de la déclaration IA). Une revue humaine précède toujours sa publication. **À ce stade expérimental, aucune note ni étiquette de niveau n'est diffusée : l'objectif est purement formatif.**
 
@@ -51,13 +51,40 @@ ORDER BY decline_dollars ASC;
 
 ## 2. Rétroaction pédagogique sur le brief
 
-_La rétroaction détaillée n'a pas pu être générée (LLM indisponible: openai: Connection error.)._
+> Bon diagnostic opérationnel: le brief identifie des catégories et régions en déclin et propose la construction d'un entrepôt. Pour passer à l'excellent, formalisez le traitement des changements historiques, automatisez les checks de qualité et ajoutez un log de processus reproducible.
 
-Vous pouvez relancer le grader local (`tools/grader/grade_brief.py`) pour obtenir une vue indicative.
+### Observations par dimension
+
+**Model quality**
+- Observation : Vous déclarez clairement le grain (« une ligne par ligne de vente transactionnelle »), listez mesures et dimensions et fournissez un schéma d'analyse par catégorie et région.
+- Piste d'amélioration : Précisez le traitement des changements historiques (SCD) et notez les attributs non-additifs (ex. unit_price) avec règles de calcul explicites.
+
+**Validation quality**
+- Observation : Vous fournissez des requêtes SQL de validation et indiquez avoir réconcilié les agrégats avec raw_fact_sales.
+- Piste d'amélioration : Ajoutez des checks automatisés (NULLs, doublons du grain, SUM(quantity×unit_price) vs SUM(line_total)) et couvrez les cas limites dans la requête.
+
+**Executive justification**
+- Observation : La section 'Réponse exécutive' énonce catégories et régions en déclin et la recommandation de créer un entrepôt Kimball.
+- Piste d'amélioration : Formulez une recommandation décisionnelle claire avec impact chiffré (ex. pertes projetées et actions prioritaires) en langage non technique.
+
+**Process trace**
+- Observation : Le brief ne mentionne ni historique de commits git ni note d'usage d'outil IA ou journal de décisions.
+- Piste d'amélioration : Incluez un log de commits (≥3) avec messages significatifs et une note IA décrivant outils et validation humaine.
+
+**Reproducibility**
+- Observation : Les requêtes sont fournies mais contiennent des dates redacted et des jointures (géographie via city) qui peuvent empêcher une exécution reproducible sans contexte.
+- Piste d'amélioration : Fournissez un README + scripts exécutables (ex. DuckDB), jeux de dates d'exemple non redacted et retirez chemins codés en dur pour permettre un clone→run.
 
 ## 3. Déclaration d'utilisation de l'IA
 
-_La déclaration n'a pas pu être analysée (Évaluation IA-usage non effectuée: openai: Connection error.)._
+> La déclaration est détaillée et documente clairement les interactions (prompts, requêtes SQL et vérifications). Cependant l'outil est nommé sans précision de version/modèle technique plus fine, ce qui rend la partie « version » générique.
+
+**Sujets bien couverts dans votre déclaration :**
+
+- outils utilisés (nom + version/modèle)
+- à quelle étape l'IA a été utilisée
+- comment la sortie a été validée par l'humain
+- limites ou erreurs observées
 
 ## 4. Pistes d'action pour la prochaine itération
 
@@ -67,15 +94,16 @@ _La déclaration n'a pas pu être analysée (Évaluation IA-usage non effectuée
 
 ## 5. Traçabilité
 
-- **Run ID :** `20260514T221333Z-7d34bf6a`
+- **Run ID :** `20260514T235532Z-d8b8f471`
 - **Devoir :** `S01`
-- **Étudiant·e :** `v2-Chadime`
+- **Étudiant·e :** `Chadime`
 - **Commit analysé :** `1a628f9`
-- **Audit (côté instructeur) :** `tools/instructor/feedback_pipeline/audit/20260514T221333Z-7d34bf6a/v2-Chadime/`
+- **Audit (côté instructeur) :** `tools/instructor/feedback_pipeline/audit/20260514T235532Z-d8b8f471/Chadime/`
 - **Prompts (SHA-256) :**
   - `sql_extractor_system` : `90ee9e277de7a27f...`
   - `rubric_grader_system` : `505f32d1d8319d66...`
   - `ai_usage_grader_system` : `81cb7fdf89bda55a...`
-- **Fournisseur (IA-usage) :** `fallback` (?)
+- **Fournisseur (rubrique) :** `openai`
+- **Fournisseur (IA-usage) :** `openai` (gpt-5-mini-2025-08-07)
 
 _Ce feedback a été produit par un pipeline automatisé et **revu par l'équipe pédagogique avant publication**. Aucun chiffre ni étiquette de niveau n'est diffusé à ce stade expérimental : l'objectif est uniquement formatif. Ouvrez une issue dans ce dépôt pour toute question._
