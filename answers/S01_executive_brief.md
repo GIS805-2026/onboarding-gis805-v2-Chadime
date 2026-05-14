@@ -6,8 +6,7 @@ Quelles catégories de produits déclinent? Dans quelles régions, et pourquoi?
 
 ## Réponse exécutive
 
-L’analyse des ventes montre que certaines catégories, notamment Automotive et Pet Supplies, présentent un recul progressif dans des régions comme l’Ontario et le Québec. Le déclin semble corrélé à trois facteurs principaux : une diminution des promotions appliquées, une baisse du nombre de clients actifs et une augmentation des prix moyens. Les données disponibles permettent d’identifier les tendances régionales et temporelles avec précision, mais les causes demeurent des hypothèses analytiques plutôt que des causalités démontrées. Une relance promotionnelle ciblée et un suivi plus détaillé des comportements clients sont recommandés.
-
+En prenant les deix derniers mois de l'année 2025, l’analyse des ventes montre que certaines catégories, notamment automotives, Pet Supplies et Books&Media on connus les plus gros déclins entre les deux derniers mois (-1897.52$, -1667.05$, -1383.66$). Ces déclins concernent dans l'ordre, les régions de l'Ontario, du Québec et de la Colombie-britannique.
 ## Décisions de modélisation
 Le grain choisi pour la table des faits est:
 Une ligne par ligne de vente transactionnelle
@@ -29,42 +28,46 @@ Ces hypothèses reposent sur des corrélations observées dans les données.
 
 
 ## Preuve
-Requête pour avoir le nombre de tables dans la db:
-duckdb /workspaces/onboarding-gis805-v2-Chadime/db/nexamart.duckdb "SELECT table_name FROM information_schema.tables WHERE table_schema = 'main' ORDER BY table_name;"
+Requête que j'ai utilisé pour estimer les revenus mensuels bruts par catégorie et région:
 
-Requête pour voir le revenue par catégorie et par région:
+WITH monthly AS (
+    SELECT
+        p.category,
+        g.region,
+        DATE_TRUNC('month', s.order_date) as mth,
+        ROUND(SUM(s.line_total), 2) as revenue
+    FROM raw_fact_sales s
+    JOIN raw_dim_product p ON s.product_id = p.product_id
+    JOIN raw_dim_store st ON s.store_id = st.store_id
+    JOIN raw_dim_geography g ON st.city = g.city
+    WHERE s.order_date >= '2025-11-01' AND s.order_date < '2026-01-01'
+    GROUP BY 1, 2, 3
+),
+pvt AS (
+    SELECT category, region,
+        MAX(CASE WHEN mth = '2025-11-01' THEN revenue ELSE 0 END) as nov_2025,
+        MAX(CASE WHEN mth = '2025-12-01' THEN revenue ELSE 0 END) as dec_2025
+    FROM monthly GROUP BY 1, 2
+)
+SELECT *, ROUND(dec_2025 - nov_2025, 2) as decline_dollars
+FROM pvt
+WHERE nov_2025 > 0 AND dec_2025 < nov_2025
+ORDER BY decline_dollars ASC;
 
-SELECT
-  p.category,
-  s.region,
-  SUM(f.line_total) AS total_revenue
-FROM raw_fact_sales f
-JOIN raw_dim_product p ON f.product_id = p.product_id
-JOIN raw_dim_store s ON f.store_id = s.store_id
--- TODO(étudiant): Vérifie que les JOINs préservent le grain de la fact table
--- (1 ligne de fact_sales = combien de lignes après les JOINs ?)
-GROUP BY p.category, s.region
-ORDER BY p.category, s.region;
+Requête que j'ai utilisé, pour agréger par régions, mois et catégorie de produits:
 
-Requêtre pour localiser le déclin:
-
-SELECT
-  p.category,
-  p.product_name,
-  s.region,
-  DATE_TRUNC('month', f.order_date) AS mois,
-  SUM(f.line_total) AS revenue
-FROM fact_sales f
-JOIN dim_product p ON f.product_id = p.product_id
-JOIN dim_store s ON f.store_id = s.store_id
-WHERE p.category = 'Automotive' AND s.region = 'Ontario'
-GROUP BY p.category, p.product_name, s.region, mois
-ORDER BY mois DESC, revenue DESC;
-
-Toutes les autres requêtes que j'ai effectué peuvent être retrouver dans la section ai-usage.md
-
-
-
+SELECT p.category, g.region,
+    DATE_TRUNC('month', r.return_date) as month,
+    r.return_reason,
+    COUNT(*) as nb_returns,
+    ROUND(SUM(r.refund_amount), 2) as total_refund
+FROM raw_fact_returns r
+JOIN raw_dim_product p ON r.product_id = p.product_id
+JOIN raw_dim_store st ON r.store_id = st.store_id
+JOIN raw_dim_geography g ON st.city = g.city
+WHERE r.return_date >= '2025-11-01' AND r.return_date < '2026-01-01'
+GROUP BY 1, 2, 3, 4
+ORDER BY 1, 2, 3;
 
 ## Validation
 Les validations suivantes ont été réalisées :
