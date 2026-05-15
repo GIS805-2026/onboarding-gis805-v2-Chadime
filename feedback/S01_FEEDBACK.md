@@ -1,8 +1,10 @@
 # Rétroaction automatisée -- S01 (Diagnostic fondamental -- NexaMart kickoff)
 
-_Générée le 2026-05-14T23:56:38+00:00 -- Run `20260514T235532Z-d8b8f471`_
+_Générée le 2026-05-15T12:29:28+00:00 -- Run `20260515T122624Z-00a5a04f`_
 
 Ce document est produit par un pipeline reproductible (vérification SQL déterministe + analyse LLM du brief et de la déclaration IA). Une revue humaine précède toujours sa publication. **À ce stade expérimental, aucune note ni étiquette de niveau n'est diffusée : l'objectif est purement formatif.**
+
+> ⚠️ **Avertissement instructeur (à retirer avant publication) :** cette analyse a été générée avec `--skip-pull`. Le contenu correspond au commit local et **n'est peut-être pas la dernière version poussée par l'étudiant·e**.
 
 ---
 
@@ -45,39 +47,38 @@ ORDER BY decline_dollars ASC;
 
 **Pistes :**
 > Requête extraite par LLM (aucun bloc fencé détecté). Encadrez votre requête finale par ```sql ... ``` pour éliminer toute ambiguïté.
-> Votre `db/nexamart.duckdb` est absente ou vide ; la requête a été exécutée contre une **base de référence cohorte** (seed instructeur). Les chiffres retournés ne correspondent donc pas à vos propres données : reconstruisez votre base avec `python src/run_pipeline.py` (ou `.\run.ps1 load`) pour valider vos calculs sur votre seed personnel.
 > Tables référencées dans votre requête mais absentes de la base : `monthly`, `pvt`.
 > Tables disponibles dans `db/nexamart.duckdb` : `raw_bridge_campaign_allocation`, `raw_bridge_customer_segment`, `raw_customer_changes`, `raw_customer_profile_bands`, `raw_customer_scd3_history`, `raw_dim_channel`, `raw_dim_customer`, `raw_dim_date`, `raw_dim_geography`, `raw_dim_product`, `raw_dim_segment_outrigger`, `raw_dim_store`, `raw_fact_budget`, `raw_fact_daily_inventory`, `raw_fact_inventory_snapshot`, `raw_fact_order_pipeline`, `raw_fact_orders_transaction`, `raw_fact_promo_exposure`, `raw_fact_returns`, `raw_fact_sales`.
 
 ## 2. Rétroaction pédagogique sur le brief
 
-> Bon diagnostic opérationnel: le brief identifie des catégories et régions en déclin et propose la construction d'un entrepôt. Pour passer à l'excellent, formalisez le traitement des changements historiques, automatisez les checks de qualité et ajoutez un log de processus reproducible.
+> Le brief répond directement à la question CEO avec chiffres et un grain explicite, et propose une recommandation opérationnelle (Kimball). Il manque toutefois la traçabilité (commits, note IA) et des contrôles reproductibles formels pour mettre ce diagnostic en production.
 
 ### Observations par dimension
 
 **Model quality**
-- Observation : Vous déclarez clairement le grain (« une ligne par ligne de vente transactionnelle »), listez mesures et dimensions et fournissez un schéma d'analyse par catégorie et région.
-- Piste d'amélioration : Précisez le traitement des changements historiques (SCD) et notez les attributs non-additifs (ex. unit_price) avec règles de calcul explicites.
+- Observation : « Le grain choisi pour la table des faits est: Une ligne par ligne de vente transactionnelle » et la brief liste dim_product, dim_store, dim_date, dim_customer, dim_promotion.
+- Piste d'amélioration : Documenter les patterns SCD (ex. SCD Type 2), expliciter le traitement de unit_price non-additif et fournir un DDL minimal (CREATE TABLE) pour le schéma en étoile.
 
 **Validation quality**
-- Observation : Vous fournissez des requêtes SQL de validation et indiquez avoir réconcilié les agrégats avec raw_fact_sales.
-- Piste d'amélioration : Ajoutez des checks automatisés (NULLs, doublons du grain, SUM(quantity×unit_price) vs SUM(line_total)) et couvrez les cas limites dans la requête.
+- Observation : La section Preuve inclut une requête avec agrégation mensuelle et une seconde pour les retours, et la section Validation mentionne réconciliation des agrégats.
+- Piste d'amélioration : Ajouter des checks reproductibles traitant les NULLs, contrôler les doublons sur le grain et inclure des cas limites (p.ex. mois sans ventes, SUM(weight)=1) dans un script 'make check'.
 
 **Executive justification**
-- Observation : La section 'Réponse exécutive' énonce catégories et régions en déclin et la recommandation de créer un entrepôt Kimball.
-- Piste d'amélioration : Formulez une recommandation décisionnelle claire avec impact chiffré (ex. pertes projetées et actions prioritaires) en langage non technique.
+- Observation : La Réponse exécutive donne des chiffres précis de déclin par catégorie et région et la Prochaine recommandation propose de créer un entrepôt selon Kimball.
+- Piste d'amélioration : Raccourcir en langage décisionnel (150–300 mots), expliciter l'action demandée au CEO (p.ex. valider le budget/plan S02) et ajouter l'impact attendu en KPIs.
 
 **Process trace**
-- Observation : Le brief ne mentionne ni historique de commits git ni note d'usage d'outil IA ou journal de décisions.
-- Piste d'amélioration : Incluez un log de commits (≥3) avec messages significatifs et une note IA décrivant outils et validation humaine.
+- Observation : Aucune mention d'un historique de commits git, d'une note IA ou d'un decision log dans le brief.
+- Piste d'amélioration : Fournir l'historique git (≥3 commits significatifs), documenter l'usage d'outils IA si utilisés et ajouter un court decision log sur les choix de modélisation.
 
 **Reproducibility**
-- Observation : Les requêtes sont fournies mais contiennent des dates redacted et des jointures (géographie via city) qui peuvent empêcher une exécution reproducible sans contexte.
-- Piste d'amélioration : Fournissez un README + scripts exécutables (ex. DuckDB), jeux de dates d'exemple non redacted et retirez chemins codés en dur pour permettre un clone→run.
+- Observation : Les requêtes contiennent des placeholders '[REDACTED-PHONE]' et il n'y a pas d'instructions de reproduction claires.
+- Piste d'amélioration : Inclure un README et un script de test (ex. DuckDB + make check) sans chemins codés en dur et remplacer les placeholders par des jeux de données d'exemple pour cloner et reproduire.
 
 ## 3. Déclaration d'utilisation de l'IA
 
-> La déclaration est détaillée et documente clairement les interactions (prompts, requêtes SQL et vérifications). Cependant l'outil est nommé sans précision de version/modèle technique plus fine, ce qui rend la partie « version » générique.
+> La déclaration documente clairement l'utilisation de GitHub Copilot Chat, les étapes d'interaction et plusieurs démarches de validation humaine. Indiquez toutefois la version du modèle (ou sa configuration) et précisez davantage la méthode de validation humaine pour obtenir la note maximale.
 
 **Sujets bien couverts dans votre déclaration :**
 
@@ -94,11 +95,11 @@ ORDER BY decline_dollars ASC;
 
 ## 5. Traçabilité
 
-- **Run ID :** `20260514T235532Z-d8b8f471`
+- **Run ID :** `20260515T122624Z-00a5a04f`
 - **Devoir :** `S01`
 - **Étudiant·e :** `Chadime`
-- **Commit analysé :** `1a628f9`
-- **Audit (côté instructeur) :** `tools/instructor/feedback_pipeline/audit/20260514T235532Z-d8b8f471/Chadime/`
+- **Commit analysé :** `51d903f`
+- **Audit (côté instructeur) :** `tools/instructor/feedback_pipeline/audit/20260515T122624Z-00a5a04f/Chadime/`
 - **Prompts (SHA-256) :**
   - `sql_extractor_system` : `90ee9e277de7a27f...`
   - `rubric_grader_system` : `505f32d1d8319d66...`
